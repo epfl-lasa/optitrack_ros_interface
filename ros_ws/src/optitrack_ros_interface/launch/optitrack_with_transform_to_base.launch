@@ -1,9 +1,9 @@
 <launch>    
-    <arg name = "server"      default="128.178.145.104"/>
-    <arg name = "list_object" default="['/vrpn_client_node/TargetRobetarme/pose']"/>
+    <arg name = "server"      default="IP"/>
+    <arg name = "list_object" default="['/vrpn_client_node/OBJECT1/pose']"/>
     
     <arg name = "name_base_optitrack"   default="base"/>
-    <arg name = "name_base"   default="/vrpn_client_node/BaseUR5/pose"/>
+    <arg name = "name_base"   default="/vrpn_client_node/BASE/pose"/>
 
     <!-- vrpn Optitrack -->
     <node pkg="vrpn_client_ros" type="vrpn_client_node" name="vrpn_client_node" output="screen">
