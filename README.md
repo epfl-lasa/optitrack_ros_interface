@@ -24,7 +24,7 @@ To utilize the functionality provided by this repository, follow these steps:
 
 4. **Run the Docker Container:** After the Docker image is built successfully, run the `start_optitrack.sh` script to start the application:
     ```bash
-    ./start_optitrack.sh
+    bash start_optitrack.sh
     ```
 
 ## Docker Configuration
