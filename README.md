@@ -9,7 +9,7 @@ To utilize the functionality provided by this repository, follow these steps:
 
 1. **Clone the Repository:** Clone this repository to your local machine using the following command:
     ```bash
-    git clone <repository_url>
+    git clone https://github.com/epfl-lasa/optitrack_ros_interface.git
     ```
 
 2. **Navigate to the Docker Folder:** Enter the `docker` directory within the cloned repository.
