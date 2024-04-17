@@ -118,6 +118,7 @@ std::vector<ros::Subscriber> list_sub;
 int main(int argc, char** argv) {
   string name_base;
   std::vector<std::string> subscribedTopics;
+  std::vector<std::string> subscribedObjects;
   //Initialisation of the Ros Node (Service, Subscrber and Publisher)
   ros::init(argc, argv, "objectbase");
   ros::NodeHandle Nh;
@@ -126,7 +127,7 @@ int main(int argc, char** argv) {
   Nh.getParam(ros::this_node::getName() + "/list_object", subscribedObjects);
 
   ROS_INFO("Base topic is:");
-  topic_base = "/vrpn_client_node/"+name_base+"/pose";
+  std::string topic_base = "/vrpn_client_node/"+name_base+"/pose";
   ROS_INFO("%s", topic_base.c_str());
 
   // Subscribe to each topic in the list
