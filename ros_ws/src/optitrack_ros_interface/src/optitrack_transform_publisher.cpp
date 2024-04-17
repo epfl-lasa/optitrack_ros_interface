@@ -122,17 +122,19 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "objectbase");
   ros::NodeHandle Nh;
 
-  Nh.getParam("/optitrack_ros_interface/name_base", name_base);
-  Nh.getParam("/optitrack_ros_interface/list_object", subscribedTopics);
+  Nh.getParam(ros::this_node::getName() + "/name_base", name_base);
+  Nh.getParam(ros::this_node::getName() + "/list_object", subscribedObjects);
 
   ROS_INFO("Base topic is:");
-  ROS_INFO("%s", name_base.c_str());
+  topic_base = "/vrpn_client_node/"+name_base+"/pose";
+  ROS_INFO("%s", topic_base.c_str());
 
   // Subscribe to each topic in the list
   ROS_INFO("List of topics contains:");
 
-  for (const auto& topic : subscribedTopics) {
-    ROS_INFO("%s", topic.c_str());
+  for (const auto& topic : subscribedObjects) {
+    subscribedTopics.push_back("/vrpn_client_node/"+topic+"/pose");
+    ROS_INFO("%s", subscribedTopics.back().c_str());
 
     vrpn object;
     list_objects.emplace_back(object);
@@ -141,9 +143,9 @@ int main(int argc, char** argv) {
   // Get the length of the list
   size_t list_n = list_objects.size();
   for (size_t i = 0; i < list_n; ++i) {
-    list_sub_base.emplace_back(Nh.subscribe(name_base, 1, &vrpn::CC_vrpn_base, &list_objects[i]));
+    list_sub_base.emplace_back(Nh.subscribe(topic_base, 1, &vrpn::CC_vrpn_base, &list_objects[i]));
     list_sub.emplace_back(Nh.subscribe(subscribedTopics[i], 1, &vrpn::CC_vrpn_obj, &list_objects[i]));
-    list_pub.emplace_back(Nh.advertise<geometry_msgs::PoseStamped>(subscribedTopics[i] + "_transform", 1));
+    list_pub.emplace_back(Nh.advertise<geometry_msgs::PoseStamped>(subscribedTopics[i] + "_from_" + name_base.c_str(), 1));
   }
   // Set as 1000 in order to process any optitrack frquency
   ros::Rate loop_rate(1000);
