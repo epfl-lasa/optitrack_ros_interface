@@ -46,7 +46,6 @@ public:     // Access specifier
       // Erase the last 4 characters
       inputString.erase(inputString.length() - 5);
     }
-    inputString = "base";
     // transform the quaternion to rotation matrix
     Quaterniond q;
     q.x() = quat[0];
@@ -117,12 +116,14 @@ std::vector<ros::Subscriber> list_sub;
 
 int main(int argc, char** argv) {
   string name_base;
+  string base_frame;
+
   std::vector<std::string> subscribedTopics;
   std::vector<std::string> subscribedObjects;
   //Initialisation of the Ros Node (Service, Subscrber and Publisher)
   ros::init(argc, argv, "objectbase");
   ros::NodeHandle Nh;
-
+  Nh.getParam(ros::this_node::getName() + "/base_frame", base_frame);
   Nh.getParam(ros::this_node::getName() + "/name_base", name_base);
   Nh.getParam(ros::this_node::getName() + "/list_object", subscribedObjects);
 
@@ -159,7 +160,7 @@ int main(int argc, char** argv) {
 
     for (size_t i = 0; i < list_n; ++i) {
       if (list_objects[i].to_publish) {
-        list_objects[i].transform_new_base(name_base.c_str());
+        list_objects[i].transform_new_base(base_frame.c_str());
 
         list_objects[i].msgP.header.stamp = list_objects[i].time;
         list_pub[i].publish(list_objects[i].msgP);
