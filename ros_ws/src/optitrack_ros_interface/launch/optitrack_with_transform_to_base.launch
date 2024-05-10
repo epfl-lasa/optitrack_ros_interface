@@ -2,7 +2,7 @@
     <arg name = "server"      default="IP"/>
     <arg name = "list_object" default="['OBJECT1']"/>
     
-    <arg name = "name_base_optitrack"   default="base"/>
+    <arg name = "name_frame"   default="base"/>
     <arg name = "name_base"   default="BASE"/>
 
     <!-- vrpn Optitrack -->
@@ -24,7 +24,7 @@
     	<rosparam subst_value="true">
         list_object: $(arg list_object)
         name_base: $(arg name_base)
-        name_base_optitrack: $(arg name_base_optitrack)
+        name_frame: $(arg name_frame)
         </rosparam>
     </node>
     
