@@ -38,14 +38,6 @@ public:     // Access specifier
   }
   void transform_new_base(std::string inputString) {// Method/function defined inside the class
 
-    // Check if the string is long enough
-    if (inputString.length() >= 24) {
-      // Erase the first 5 characters
-      inputString.erase(0, 18);
-
-      // Erase the last 4 characters
-      inputString.erase(inputString.length() - 5);
-    }
     // transform the quaternion to rotation matrix
     Quaterniond q;
     q.x() = quat[0];
