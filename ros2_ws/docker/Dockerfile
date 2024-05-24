@@ -22,6 +22,13 @@ RUN if [ "HOST_GID" != "1000"] ; \
     usermod ${USER} -a -G ${USER_GROUP}; fi
 USER ${USER}
 
+# Set environment variables
+ENV HOME /home/${USER}
+ENV ROS_WS ${HOME}/ros2_ws
+
+# Set the working directory
+WORKDIR ${ROS_WS}
+
 # Setup git identity
 RUN git config --global user.name "${GIT_NAME}"
 RUN git config --global user.email "${GIT_EMAIL}"
@@ -45,28 +52,32 @@ RUN sudo pip install scipy
 ### Final apt clean
 RUN sudo apt update && sudo apt upgrade -y && sudo apt clean 
 
-# Handle SIMD option
-RUN if [ "${USE_SIMD}" = "ON" ] ; \ 
-    then export CMAKE_CXX_FLAGS="-march=native -faligned-new" ; fi    
+
+WORKDIR /home/${ROS_WS} && mkdir -p src/optitrack_ros2_interface
+
+# Clone the repository and copy the necessary files
+RUN git clone https://github.com/epfl-lasa/optitrack_ros_interface.git /tmp/optitrack_ros_interface \
+    && cp -r /tmp/optitrack_ros_interface/ros2_ws/src/optitrack_ros2_interface ${ROS_WS}/src/ \
+    && rm -rf /tmp/optitrack_ros_interface
 
 ### Add environement variables to bashrc
 WORKDIR /home/${USER}
-RUN git clone https://github.com/epfl-lasa/optitrack_ros_interface.git 
-# COPY optitrack_ros_interface/ros2_ws/src/optitrack_ros2_interface /ros2_ws/
-# RUN rm -rf optitrack_ros_interface 
 
 # Give bashrc back to user
 RUN sudo chown -R ${USER}:${HOST_GID} .bashrc
 
 # Add cmake option to bash rc if needed
-RUN if [ "${USE_SIMD}" = "ON" ] ; \
-    then echo "export ENABLE_SIMD=ON" >> /home/${USER}/.bashrc ; fi
-
+RUN if [ "${USE_SIMD}" = "ON" ] ; \ 
+    then export CMAKE_CXX_FLAGS="-march=native -faligned-new" ; fi
 
 ### Build ros2 workspace
-WORKDIR /home/${USER}/ros2_ws/
+WORKDIR /${ROS_WS}/
 RUN source /opt/ros/humble/setup.bash && colcon build && source install/setup.bash;
 
+
+RUN echo "source /opt/ros/humble/setup.bash && \
+    source install/setup.bash && \
+    ros2 launch optitrack_ros2_interface optitrack_with_transform_to_base.py" >> /home/${USER}/.bashrc ;
 
 
 
