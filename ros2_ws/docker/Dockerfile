@@ -77,7 +77,7 @@ RUN source /opt/ros/humble/setup.bash && colcon build && source install/setup.ba
 
 RUN echo "source /opt/ros/humble/setup.bash && \
     source install/setup.bash && \
-    ros2 launch optitrack_ros2_interface optitrack_with_transform_to_base.py" >> /home/${USER}/.bashrc ;
+    ros2 launch optitrack_ros2_interface optitrack_with_transform_to_base.py" >> ${HOME}/.bashrc ;
 
 
 
