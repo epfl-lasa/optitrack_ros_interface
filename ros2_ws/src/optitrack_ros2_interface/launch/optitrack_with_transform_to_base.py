@@ -19,8 +19,8 @@ def generate_launch_description():
             name='optitrack_ros2_interface',
             output='screen',
             parameters=[
-                {'list_object': ['eefUr5']},
-                {'name_base': 'BaseRidgeback'},
+                {'list_object': ['ball_19']},
+                {'name_base': 'franka_base17'},
                 {'name_base_optitrack': 'base'},
             ],
         ),
