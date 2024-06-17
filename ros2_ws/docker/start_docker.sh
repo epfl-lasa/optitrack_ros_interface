@@ -4,6 +4,7 @@ CONTAINER_NAME="${IMAGE_NAME//[\/.]/-}"
 USERNAME="ros2"
 MODE="interactive"
 USE_NVIDIA_TOOLKIT=false
+ROS_DOMAIN_ID=14
 
 # Help
 HELP_MESSAGE="Usage: ./start_dockers.sh [interactive | server | connect] [-i, --image] [-u, --user]
@@ -79,6 +80,7 @@ if [ "${MODE}" != "connect" ]; then
     # network for ros
     FWD_ARGS+=(--net host)
     FWD_ARGS+=(--env ROS_HOSTNAME="$(hostname)")
+    FWD_ARGS+=(--ros-domain-id "${ROS_DOMAIN_ID}")
 
     # Handle GPU usage
     [[ ${USE_NVIDIA_TOOLKIT} = true ]] && GPU_FLAG="--gpus all" || GPU_FLAG=""
