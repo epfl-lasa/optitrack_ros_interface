@@ -52,16 +52,8 @@ RUN sudo pip install scipy
 ### Final apt clean
 RUN sudo apt update && sudo apt upgrade -y && sudo apt clean 
 
-
-#WORKDIR /home/${ROS_WS} && mkdir -p src/optitrack_ros2_interface
-
-# Clone the repository and copy the necessary files
-#RUN git clone https://github.com/epfl-lasa/optitrack_ros_interface.git /tmp/optitrack_ros_interface \
-#    && cp -r /tmp/optitrack_ros_interface/ros2_ws/src/optitrack_ros2_interface ${ROS_WS}/src/ \
-#    && rm -rf /tmp/optitrack_ros_interface
-
 ### COPY the src folder to ros_ws/src
-WORKDIR /home/${ROS_WS}
+WORKDIR ${ROS_WS}
 COPY --chown=${USER} ./src/optitrack_ros2_interface ./src/optitrack_ros2_interface
 
 ### Add environement variables to bashrc

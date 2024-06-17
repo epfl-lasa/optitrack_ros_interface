@@ -69,12 +69,12 @@ if [ "${MODE}" != "connect" ]; then
     fi
 
     # Check if a NVIDIA GPU is available
-    #if [[ $(sudo lshw -C display | grep vendor) =~ NVIDIA ]]; then
+    # if [[ $(sudo lshw -C display | grep vendor) =~ NVIDIA ]]; then
     #    USE_NVIDIA_TOOLKIT=true
     #    echo "Detected NVIDIA graphic card, giving access to the container."
-    #else
+    # else
     #    USE_NVIDIA_TOOLKIT=false
-    #fi
+    # fi
 	
     # network for ros
     FWD_ARGS+=(--net host)
@@ -85,15 +85,6 @@ if [ "${MODE}" != "connect" ]; then
 
     # Other
     FWD_ARGS+=("--privileged")
-    # Add volume path_planning
-    docker volume rm optitrack_ros2_interface
-    docker volume create --driver local \
-    --opt type="none" \
-    --opt device="${PWD}/../src/optitrack_ros2_interface" \
-    --opt o="bind" \
-    "optitrack_ros2_interface"
-
-    FWD_ARGS+=(--volume="optitrack_ros2_interface:/home/ros2/ros2_ws:rw")
 fi
 
     
