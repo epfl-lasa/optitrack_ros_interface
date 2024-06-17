@@ -2,7 +2,7 @@
 IMAGE_NAME="epfl-lasa/optitrack_ros2"
 CONTAINER_NAME="${IMAGE_NAME//[\/.]/-}"
 USERNAME="ros2"
-MODE=()
+MODE="interactive"
 USE_NVIDIA_TOOLKIT=false
 
 # Help
