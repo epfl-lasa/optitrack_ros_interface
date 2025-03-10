@@ -1,5 +1,5 @@
 # Object Pose ROS Workspace
-This repository contains a ROS workspace (ros_ws) aimed at providing the pose of an object relative to a base. Currently, it operates within the ROS (Robot Operating System) environment. However, a version compatible with ROS2 is planned for the near future.
+This repository contains a ROS workspace (ros_ws) aimed at providing the pose of an object relative to a base. Currently, it operates within the ROS (Robot Operating System) environment. Furthemore, a version compatible with ROS2 is available (ros2_ws).
 
 ## Purpose
 The primary objective of this workspace is to facilitate the determination of an object's pose concerning a base. This functionality is crucial in various robotics applications where precise spatial information is required for navigation, manipulation, or interaction tasks.
