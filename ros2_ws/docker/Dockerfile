@@ -37,6 +37,7 @@ RUN git config --global user.email "${GIT_EMAIL}"
 RUN sudo apt update
 RUN sudo apt install python-is-python3
 
+
 ### Add a few tools
 RUN sudo apt-get update && sudo apt-get install -y \
     bash-completion \
@@ -46,6 +47,7 @@ RUN sudo apt-get update && sudo apt-get install -y \
     alsa-utils \
     netbase \
     ros-humble-vrpn-mocap \
+    ros-humble-rmw-cyclonedds-cpp \
     && sudo apt-get upgrade -y && sudo apt-get clean
 
 RUN sudo pip install scipy

@@ -9,7 +9,7 @@ def generate_launch_description():
             name='vrpn_mocap_client',
             output='screen',
             parameters=[
-                {'server': '128.178.145.104'},
+                {'server': '128.178.145.105'},
                 {'port': 3883},
             ],
         ),

@@ -79,8 +79,9 @@ if [ "${MODE}" != "connect" ]; then
 	
     # network for ros
     FWD_ARGS+=(--net host)
-    FWD_ARGS+=(--env ROS_HOSTNAME="$(hostname)")
+    #FWD_ARGS+=("--no-hostname")
     FWD_ARGS+=(--ros-domain-id "${ROS_DOMAIN_ID}")
+    FWD_ARGS+=(--env RMW_IMPLEMENTATION=rmw_cyclonedds_cpp)
 
     # Handle GPU usage
     [[ ${USE_NVIDIA_TOOLKIT} = true ]] && GPU_FLAG="--gpus all" || GPU_FLAG=""
