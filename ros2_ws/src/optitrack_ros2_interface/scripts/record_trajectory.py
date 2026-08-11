@@ -2,6 +2,7 @@
 
 import csv
 import os
+import threading
 from datetime import datetime
 
 import rclpy
@@ -15,11 +16,8 @@ class OptitrackPoseRecorder(Node):
     def __init__(self):
         super().__init__('optitrack_pose_recorder')
 
-        self.declare_parameter('topic', '/ball_19/pose')
-        self.declare_parameter(
-            'output_directory',
-            '/home/ros2/ros2_ws/records'
-        )
+        self.declare_parameter('topic', '/holy_cup/pose')
+        self.declare_parameter('output_directory', '/home/ros2/ros2_ws/data')
         self.declare_parameter('file_name', '')
 
         topic = self.get_parameter('topic').value
@@ -30,7 +28,13 @@ class OptitrackPoseRecorder(Node):
 
         if not file_name:
             current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
-            file_name = f'optitrack_pose_{current_time}.csv'
+            topic_name = topic.strip('/').replace('/', '_') or 'topic'
+            file_name = f'{topic_name}_{current_time}.csv'
+        else:
+            # Keep explicitly named recordings inside output_directory.
+            file_name = os.path.basename(file_name)
+            if file_name in ('', '.', '..'):
+                raise ValueError('file_name must name a file')
 
         self.output_path = os.path.join(output_directory, file_name)
 
@@ -58,6 +62,7 @@ class OptitrackPoseRecorder(Node):
 
         self.first_timestamp = None
         self.sample_count = 0
+        self.file_lock = threading.Lock()
 
         # VRPN pose topics commonly use best-effort QoS.
         qos = QoSProfile(
@@ -77,43 +82,55 @@ class OptitrackPoseRecorder(Node):
         self.get_logger().info(f'Saving CSV to: {self.output_path}')
 
     def pose_callback(self, msg: PoseStamped):
-        timestamp_sec = (
-            float(msg.header.stamp.sec)
-            + float(msg.header.stamp.nanosec) * 1e-9
-        )
+        with self.file_lock:
+            if self.csv_file.closed:
+                return
 
-        if self.first_timestamp is None:
-            self.first_timestamp = timestamp_sec
-
-        elapsed_time_sec = timestamp_sec - self.first_timestamp
-
-        self.writer.writerow([
-            f'{timestamp_sec:.9f}',
-            f'{elapsed_time_sec:.9f}',
-            msg.header.frame_id,
-            f'{msg.pose.position.x:.10f}',
-            f'{msg.pose.position.y:.10f}',
-            f'{msg.pose.position.z:.10f}',
-            f'{msg.pose.orientation.x:.10f}',
-            f'{msg.pose.orientation.y:.10f}',
-            f'{msg.pose.orientation.z:.10f}',
-            f'{msg.pose.orientation.w:.10f}',
-        ])
-
-        self.sample_count += 1
-
-        if self.sample_count % 100 == 0:
-            self.get_logger().info(
-                f'Recorded {self.sample_count} samples'
+            timestamp_sec = (
+                float(msg.header.stamp.sec)
+                + float(msg.header.stamp.nanosec) * 1e-9
             )
+
+            if self.first_timestamp is None:
+                self.first_timestamp = timestamp_sec
+
+            elapsed_time_sec = timestamp_sec - self.first_timestamp
+
+            self.writer.writerow([
+                f'{timestamp_sec:.9f}',
+                f'{elapsed_time_sec:.9f}',
+                msg.header.frame_id,
+                f'{msg.pose.position.x:.10f}',
+                f'{msg.pose.position.y:.10f}',
+                f'{msg.pose.position.z:.10f}',
+                f'{msg.pose.orientation.x:.10f}',
+                f'{msg.pose.orientation.y:.10f}',
+                f'{msg.pose.orientation.z:.10f}',
+                f'{msg.pose.orientation.w:.10f}',
+            ])
+
+            self.sample_count += 1
+
+            if self.sample_count % 100 == 0:
+                self.get_logger().info(
+                    f'Recorded {self.sample_count} samples'
+                )
 
     def destroy_node(self):
-        if hasattr(self, 'csv_file') and not self.csv_file.closed:
-            self.csv_file.flush()
-            self.csv_file.close()
-            self.get_logger().info(
-                f'CSV closed: {self.output_path}'
-            )
+        if hasattr(self, 'subscription'):
+            self.destroy_subscription(self.subscription)
+
+        with self.file_lock:
+            if hasattr(self, 'csv_file') and not self.csv_file.closed:
+                self.csv_file.flush()
+                self.csv_file.close()
+
+                if rclpy.ok():
+                    self.get_logger().info(
+                        f'CSV closed: {self.output_path}'
+                    )
+                else:
+                    print(f'CSV closed: {self.output_path}')
 
         super().destroy_node()
 
@@ -126,10 +143,15 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        node.get_logger().info('Recording stopped')
+        if rclpy.ok():
+            node.get_logger().info('Recording stopped')
+        else:
+            print('Recording stopped')
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

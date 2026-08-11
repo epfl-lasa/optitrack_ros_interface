@@ -1,4 +1,8 @@
 #!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+DATA_DIRECTORY="${REPOSITORY_ROOT}/data"
+
 IMAGE_NAME="epfl-lasa/optitrack_ros1"
 CONTAINER_NAME="${IMAGE_NAME//[\/.]/-}"
 USERNAME="ros"
@@ -76,17 +80,21 @@ if [ "${MODE}" != "connect" ]; then
     #    USE_NVIDIA_TOOLKIT=false
     #fi
 	
-    # network for ros
+    # network for ros (host networking required for Motive UDP, ROS_IP on ros_net bridge for kuka callbacks)
+    KUKA14_IP=$(docker inspect -f '{{(index .NetworkSettings.Networks "docker_ros_net").IPAddress}}' kuka14)
     FWD_ARGS+=(--net host)
-    FWD_ARGS+=(--env ROS_HOSTNAME="$(hostname)")
-    #HOST_IP=$(hostname -I | cut -d' ' -f1)
-    FWD_ARGS+=(--env ROS_IP="$ROS_IP")
+    FWD_ARGS+=(--env ROS_IP="172.19.0.1")
+    FWD_ARGS+=(--env ROS_MASTER_URI="http://${KUKA14_IP}:11311")
 
     # Handle GPU usage
     [[ ${USE_NVIDIA_TOOLKIT} = true ]] && GPU_FLAG="--gpus all" || GPU_FLAG=""
 
     # Other
     FWD_ARGS+=("--privileged")
+
+    # Persist trajectory recordings in the host repository's ignored data directory.
+    mkdir -p "${DATA_DIRECTORY}"
+    FWD_ARGS+=(--volume="${DATA_DIRECTORY}:/home/ros/ros_ws/data:rw")
 
     # Add volume src
     docker volume rm optitrack_ros_interface
@@ -112,7 +120,7 @@ fi
 
 
 # Start docker using aica
-aica-docker \
+/home/grace/Desktop/optitrack_ros_interface/ros2_ws/docker-images/scripts/aica-docker.sh \
     "${MODE}" \
     "${IMAGE_NAME}" \
     -u "${USERNAME}" \

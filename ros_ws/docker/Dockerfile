@@ -1,7 +1,21 @@
 # Handle ros distro
 ARG ROS_DISTRO=noetic
+ARG UBUNTU_DISTRO=focal
+
+# stage 1: using ubuntu:focal to install some tools
+FROM ubuntu:${UBUNTU_DISTRO} AS tools
+RUN apt-get update && apt-get install -y \
+        curl \
+        gnupg \
+    && rm -rf /var/lib/apt/lists/*
 
 FROM ghcr.io/aica-technology/ros-ws:${ROS_DISTRO}
+
+# copying tools from previous stage if needed
+COPY --from=tools /usr/bin/curl /usr/bin/curl
+COPY --from=tools /usr/bin/gpg /usr/bin/gpg
+COPY --from=tools /usr/bin/gpgv /usr/bin/gpgv
+COPY --from=tools /usr/bin/gpg-agent /usr/bin/gpg-agent
 
 # User provided arguments
 ARG HOST_GID=1000
@@ -11,6 +25,15 @@ ARG USE_SIMD=OFF
 
 # Tell docker we want to use bash instead of sh in general
 SHELL ["/bin/bash", "-c"]
+
+USER root 
+#! In ghcr.io/aica-technology/ros-ws:${ROS_DISTRO} image will probably switch to a non-root user as part of its own Dockerfile,
+#! which means subsequent RUN commands will not have permission to modify system-level directories like /etc/apt.
+# removing any existing ROS sources that might use the expired key (key can be found in error in terminal upon building)
+RUN \
+    grep -lr "packages.ros.org" /etc/apt/sources.list* | grep -v ros1.list | xargs -r rm -f \
+    && curl -fsSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros/ubuntu focal main" > /etc/apt/sources.list.d/ros1.list
 
 ### Add the user to the current GID of the host to avoid permisson issues in volumes
 # AICA uses the same name for user and user group
@@ -25,9 +48,6 @@ USER ${USER}
 # Setup git identity
 RUN git config --global user.name "${GIT_NAME}"
 RUN git config --global user.email "${GIT_EMAIL}"
-
-# Dangerous practices but fixes the error regarding this key when running "apt update"
-RUN sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F42ED6FBAB17C654
 
 # Setup python version for noetic
 RUN sudo apt update

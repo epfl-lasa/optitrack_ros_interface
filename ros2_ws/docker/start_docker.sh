@@ -1,10 +1,15 @@
 #!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+DATA_DIRECTORY="${REPOSITORY_ROOT}/data"
+PACKAGE_SOURCE_DIRECTORY="${REPOSITORY_ROOT}/ros2_ws/src/optitrack_ros2_interface"
+
 IMAGE_NAME="epfl-lasa/optitrack_ros2"
 CONTAINER_NAME="${IMAGE_NAME//[\/.]/-}"
 USERNAME="ros2"
 MODE="interactive"
 USE_NVIDIA_TOOLKIT=false
-ROS_DOMAIN_ID=14
+ROS_DOMAIN_ID=68
 
 # Help
 HELP_MESSAGE="Usage: ./start_dockers.sh [interactive | server | connect] [-i, --image] [-u, --user]
@@ -78,14 +83,21 @@ if [ "${MODE}" != "connect" ]; then
     # fi
 	
     # network for ros
-    FWD_ARGS+=(--net host)
+    # FWD_ARGS+=(--net host)
     #FWD_ARGS+=("--no-hostname")
     FWD_ARGS+=(--ros-domain-id "${ROS_DOMAIN_ID}")
     FWD_ARGS+=(--env RMW_IMPLEMENTATION=rmw_cyclonedds_cpp)
 
+    # Persist trajectory recordings in the host repository's ignored data directory.
+    mkdir -p "${DATA_DIRECTORY}"
+    FWD_ARGS+=("--volume=${DATA_DIRECTORY}:/home/ros2/ros2_ws/data:rw")
+
+    # Make host source edits immediately available inside the development container.
+    FWD_ARGS+=("--volume=${PACKAGE_SOURCE_DIRECTORY}:/home/ros2/ros2_ws/src/optitrack_ros2_interface:rw")
+
 
     # Trial
-    # FWD_ARGS+=(--net docker_ros_net)
+    FWD_ARGS+=(--net docker_ros_net)
     # FWD_ARGS+=(--ros-domain-id "${ROS_DOMAIN_ID}")
     # FWD_ARGS+=(--env RMW_IMPLEMENTATION=rmw_cyclonedds_cpp)
 
