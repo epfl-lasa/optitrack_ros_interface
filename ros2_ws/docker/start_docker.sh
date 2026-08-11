@@ -83,6 +83,12 @@ if [ "${MODE}" != "connect" ]; then
     FWD_ARGS+=(--ros-domain-id "${ROS_DOMAIN_ID}")
     FWD_ARGS+=(--env RMW_IMPLEMENTATION=rmw_cyclonedds_cpp)
 
+
+    # Trial
+    # FWD_ARGS+=(--net docker_ros_net)
+    # FWD_ARGS+=(--ros-domain-id "${ROS_DOMAIN_ID}")
+    # FWD_ARGS+=(--env RMW_IMPLEMENTATION=rmw_cyclonedds_cpp)
+
     # Handle GPU usage
     [[ ${USE_NVIDIA_TOOLKIT} = true ]] && GPU_FLAG="--gpus all" || GPU_FLAG=""
 
@@ -99,7 +105,7 @@ fi
 
 
 # Start docker using aica
-aica-docker \
+/home/grace/Desktop/optitrack_ros_interface/ros2_ws/docker-images/scripts/aica-docker.sh \
     "${MODE}" \
     "${IMAGE_NAME}" \
     -u "${USERNAME}" \
