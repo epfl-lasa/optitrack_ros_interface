@@ -1,7 +1,8 @@
 #!/bin/bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-DATA_DIRECTORY="${REPOSITORY_ROOT}/data"
+DATA_DIRECTORY="${OPTITRACK_DATA_DIRECTORY:-${REPOSITORY_ROOT}/data}"
+#DATA_DIRECTORY="/home/path/to/multi_bot_bench/data/optitrack"
 
 IMAGE_NAME="epfl-lasa/optitrack_ros1"
 CONTAINER_NAME="${IMAGE_NAME//[\/.]/-}"
@@ -120,7 +121,9 @@ fi
 
 
 # Start docker using aica
-/home/grace/Desktop/optitrack_ros_interface/ros2_ws/docker-images/scripts/aica-docker.sh \
+
+# Change this line to match your file path!
+"${REPOSITORY_ROOT}/ros2_ws/docker-images/scripts/aica-docker.sh" \
     "${MODE}" \
     "${IMAGE_NAME}" \
     -u "${USERNAME}" \

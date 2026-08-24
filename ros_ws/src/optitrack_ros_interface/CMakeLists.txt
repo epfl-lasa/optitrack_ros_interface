@@ -166,6 +166,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/record_trajectory.py
+  scripts/record_multiple_trajectory.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -215,5 +216,4 @@ catkin_install_python(PROGRAMS
 
 add_executable(optitrack_transform_publisher src/optitrack_transform_publisher.cpp)
 target_link_libraries(optitrack_transform_publisher ${catkin_LIBRARIES})
-
 

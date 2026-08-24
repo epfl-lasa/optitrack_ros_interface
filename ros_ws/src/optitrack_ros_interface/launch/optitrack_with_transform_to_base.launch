@@ -1,5 +1,5 @@
-<launch>    
-    <arg name = "server"      default="128.178.145.104"/>
+<launch>
+<!-- Use .104 for the left/KUKA OptiTrack system and .172 for the right system. -->    <arg name = "server"      default="128.178.145.172"/>
     <arg name = "list_object" default="['eef_ur5']"/>
     
     <arg name = "base_frame"   default="base"/>

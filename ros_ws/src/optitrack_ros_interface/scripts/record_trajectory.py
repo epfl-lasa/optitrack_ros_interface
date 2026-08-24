@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+"""Record one OptiTrack ``PoseStamped`` topic to a CSV file.
+
+Run with 'rosrun optitrack_ros_interface record_trajectory.py' and override
+the private parameters ``~topic``, ``~output_directory``, and ``~file_name`` as
+needed. Recording continues until the node is shut down (with Ctrl+C).
+
+For example: 
+    rosrun optitrack_ros_interface record_trajectory.py 
+    _topic:=/vrpn_client_node/holy_cup/pose \
+    _output_directory:=/home/ros/ros_ws/data\
+    _file_name:=holy_cup.csv
+"""
 
 import csv
 import os
@@ -10,8 +22,10 @@ from geometry_msgs.msg import PoseStamped
 
 
 class OptitrackPoseRecorder:
+    """Subscribe to one pose topic and write every received pose to CSV."""
 
     def __init__(self):
+        """Read ROS parameters, open the output file, and start subscribing."""
         topic = rospy.get_param('~topic', '/vrpn_client_node/holy_cup/pose')
         output_directory = rospy.get_param(
             '~output_directory', '/home/ros/ros_ws/data'
@@ -70,6 +84,7 @@ class OptitrackPoseRecorder:
         rospy.loginfo(f'Saving CSV to: {self.output_path}')
 
     def pose_callback(self, msg: PoseStamped):
+        """Append a received pose and its timestamp to the output CSV."""
         with self.file_lock:
             if self.csv_file.closed:
                 return
@@ -102,6 +117,7 @@ class OptitrackPoseRecorder:
                 )
 
     def destroy_node(self):
+        """Stop the subscription and safely flush and close the CSV file."""
         if hasattr(self, 'subscription'):
             self.subscription.unregister()
 
@@ -119,6 +135,7 @@ class OptitrackPoseRecorder:
 
 
 def main():
+    """Initialize the ROS node and record poses until shutdown."""
     rospy.init_node('optitrack_pose_recorder')
 
     node = OptitrackPoseRecorder()
