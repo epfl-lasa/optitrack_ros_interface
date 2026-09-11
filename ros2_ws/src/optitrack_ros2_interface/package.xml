@@ -1,16 +1,36 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>optitrack_ros2_interface</name>
-  <version>0.0.0</version>
-  <description>The optitrack_ros2_interface package</description>
-  <maintainer email="your_email@example.com">Your Name</maintainer>
+  <version>1.0.0</version>
+  <description>
+    Republishes OptiTrack/Motive rigid-body poses received over VRPN, expressed
+    in a robot base frame instead of the mocap world frame.
+  </description>
+
+  <maintainer email="tristan.bonato@epfl.ch">Tristan Bonato</maintainer>
+  <maintainer email="bruno.agostinhodacosta@epfl.ch">Bruno Agostinho Da Costa</maintainer>
   <license>Apache-2.0</license>
+  <url type="repository">https://github.com/epfl-lasa/optitrack_ros_interface</url>
+  <url type="bugtracker">https://github.com/epfl-lasa/optitrack_ros_interface/issues</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>eigen3_cmake_module</buildtool_depend>
+
   <depend>rclcpp</depend>
-  <depend>std_msgs</depend>
-  <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>eigen</depend>
+
+  <!-- Started by the launch file; previously installed by apt in the Dockerfile
+       without ever being declared here. -->
+  <exec_depend>vrpn_mocap</exec_depend>
+  <exec_depend>ros2launch</exec_depend>
+
+  <!-- Only the maths unit test. ament_lint_auto is deliberately not pulled in:
+       its uncrustify/cpplint/copyright rules reject this repository's existing
+       120-column style wholesale, and a test suite that is red on a clean
+       checkout teaches people to ignore `colcon test`. -->
+  <test_depend>ament_cmake_gtest</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

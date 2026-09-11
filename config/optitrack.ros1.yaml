@@ -1,0 +1,10 @@
+# vrpn_client_ros settings. Rig values (server, objects, base) live in .env.
+# The top-level key must match the node name in the launch file, or it is
+# ignored without warning.
+
+vrpn_client_node:
+  port: 3883
+  frame_id: world
+  broadcast_tf: true
+  update_frequency: 1000.0          # keep above Motive's rate, else samples arrive in bursts
+  refresh_tracker_frequency: 1.0    # rescan for new rigid bodies, Hz

@@ -1,0 +1,50 @@
+name: optitrack
+
+# No default profile: a bare `docker compose up` starts nothing. Pick one --
+# running both means two VRPN clients polling the same rigid bodies.
+#
+#   docker compose --profile ros2 up --build
+#   docker compose --profile ros2 restart ros2    # after editing config/
+#   docker compose --profile ros2 exec ros2 bash
+
+x-common: &common
+  network_mode: host        # DDS discovery (ROS 2) and XMLRPC callbacks (ROS 1)
+  init: true                # real PID 1; without it `stop` takes the full 10s grace
+  env_file: [.env]
+  restart: unless-stopped
+  volumes:
+    - ./config:/opt/optitrack/config:ro    # mounted, so edits need a restart not a rebuild
+  logging:
+    driver: json-file       # docker's default is unbounded
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  ros2:
+    <<: *common
+    profiles: ["ros2"]
+    container_name: optitrack-ros2
+    image: epfl-lasa/optitrack-ros2:latest
+    build:
+      context: .
+      dockerfile: docker/ros2.Dockerfile
+    environment:
+      # Read by the RMW layer before any node starts, so these cannot live in
+      # config/optitrack.ros2.yaml -- there they would silently do nothing.
+      ROS_DOMAIN_ID: "44"               # 67 = neura, 1 = duatic
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+
+  ros1:
+    <<: *common
+    profiles: ["ros1"]
+    container_name: optitrack-ros1
+    image: epfl-lasa/optitrack-ros1:latest
+    build:
+      context: .
+      dockerfile: docker/ros1.Dockerfile
+    environment:
+      ROS_MASTER_URI: http://localhost:11311
+      # Set when the default route is not the interface the robot PC uses.
+      # Leave it unset rather than empty; roscpp rejects an empty value.
+      # ROS_IP: 192.168.2.30

@@ -26,7 +26,8 @@ vendor/
 *.so
 *.a
 # Ignore environment-specific files
-.env
+# NOTE: .env itself is intentionally TRACKED -- it is the single place the rig
+# configuration lives, and the lab wants it shared rather than reconstructed.
 .env.local
 .env.*.local
 # Ignore sensitive or personal files
@@ -35,3 +36,17 @@ credentials.json
 # Ignore backup files
 *.bak
 *.backup
+
+# ROS 1 catkin artifacts (previously uncovered)
+ros_ws/build/
+ros_ws/devel/
+ros_ws/install/
+ros_ws/logs/
+.catkin_workspace
+
+# ROS 2 colcon artifacts
+ros2_ws/log/
+
+# Python bytecode
+__pycache__/
+*.pyc

@@ -1,0 +1,31 @@
+<launch>
+    <!-- Tracked defaults live in config/optitrack.ros1.yaml. Site-specific
+         values come from the environment (.env via docker compose) and override
+         the config file. -->
+    <arg name="config_file"  default="$(optenv OPTITRACK_CONFIG /opt/optitrack/config/optitrack.ros1.yaml)"/>
+    <arg name="server"       default="$(optenv OPTITRACK_SERVER 127.0.0.1)"/>
+    <!-- Comma separated, no spaces. Bracket-wrapped below so roslaunch's textual
+         $() substitution produces a YAML flow sequence. -->
+    <arg name="objects"      default="$(optenv OPTITRACK_OBJECTS)"/>
+    <arg name="base_object"  default="$(optenv OPTITRACK_BASE_OBJECT)"/>
+
+    <rosparam file="$(arg config_file)" command="load"/>
+
+    <!-- vrpn Optitrack -->
+    <node pkg="vrpn_client_ros" type="vrpn_client_node" name="vrpn_client_node" output="screen">
+        <rosparam subst_value="true">
+        server: "$(arg server)"
+        </rosparam>
+    </node>
+
+    <!-- Transform to robot base -->
+    <node pkg="optitrack_ros_interface" type="optitrack_transform_publisher"
+          name="optitrack_ros_interface" output="screen">
+        <rosparam subst_value="true">
+        # base_frame is left unset: the node defaults it to name_base.
+        list_object: [$(arg objects)]
+        name_base: "$(arg base_object)"
+        </rosparam>
+    </node>
+
+</launch>

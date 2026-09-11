@@ -1,167 +1,155 @@
-#include "ros/ros.h"
-#include "std_msgs/Float64MultiArray.h"
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <Eigen/Geometry>
 
 #include "geometry_msgs/PoseStamped.h"
-#include "geometry_msgs/QuaternionStamped.h"
-#include "geometry_msgs/Vector3Stamped.h"
+#include "ros/ros.h"
 
-#include <cmath>
-#include <eigen3/Eigen/Dense>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <stdio.h>
-#include <unistd.h>
+#include "optitrack_ros_interface/pose_transform.hpp"
 
-using namespace Eigen;
-using namespace std;
+namespace optitrack_ros_interface {
 
-class vrpn {// The class
-public:     // Access specifier
-  Vector3d pos, pos_obj;
-  Vector4d quat, quat_obj;
-  geometry_msgs::PoseStamped msgP;
-  ros::Time time;
-  bool to_publish = false;
+/// Republishes OptiTrack rigid-body poses expressed in a robot base frame
+/// instead of the mocap world frame. ROS1 counterpart of the ROS2 node; the
+/// maths is shared via pose_transform.hpp, the plumbing is not.
+class OptitrackTransformPublisher {
+public:
+  OptitrackTransformPublisher(ros::NodeHandle& nh, ros::NodeHandle& pnh) {
+    std::vector<std::string> objects;
+    pnh.param<std::string>("name_base", name_base_, "");
+    pnh.param<std::string>("base_frame", base_frame_, "");
+    // The vrpn client publishes under its own node name. This used to be
+    // hardcoded to "/vrpn_client_node", so renaming that node in the launch file
+    // silently left this one subscribed to topics nobody publishes.
+    pnh.param<std::string>("vrpn_namespace", vrpn_namespace_, "/vrpn_client_node");
+    pnh.param<std::string>("output_suffix", output_suffix_, "_from_");
+    pnh.param<bool>("require_base", require_base_, true);
+    pnh.getParam("list_object", objects);
 
-  void CC_vrpn_base(const geometry_msgs::PoseStamped::ConstPtr msg) {// Method/function defined inside the class
-    pos = {msg->pose.position.x, msg->pose.position.y, msg->pose.position.z};
-    quat = {msg->pose.orientation.x, msg->pose.orientation.y, msg->pose.orientation.z, msg->pose.orientation.w};
-    //printf("Timestamp franka: %u\n", msg->header.stamp.nsec);
-  }
-  void CC_vrpn_obj(const geometry_msgs::PoseStamped::ConstPtr msg) {// Method/function defined inside the class
-    pos_obj = {msg->pose.position.x, msg->pose.position.y, msg->pose.position.z};
-    quat_obj = {msg->pose.orientation.x, msg->pose.orientation.y, msg->pose.orientation.z, msg->pose.orientation.w};
-    time = msg->header.stamp;
-    to_publish = true;
-  }
-  void transform_new_base(std::string inputString) {// Method/function defined inside the class
+    if (name_base_.empty()) {
+      throw std::runtime_error("parameter 'name_base' is empty -- set OPTITRACK_BASE_OBJECT in .env");
+    }
+    if (objects.empty()) {
+      throw std::runtime_error("parameter 'list_object' is empty -- set OPTITRACK_OBJECTS in .env");
+    }
+    // Empty base_frame means "reuse the base rigid-body name", matching the ROS2
+    // node so both stacks stamp the same frame_id.
+    if (base_frame_.empty()) { base_frame_ = name_base_; }
 
-    // transform the quaternion to rotation matrix
-    Quaterniond q;
-    q.x() = quat[0];
-    q.y() = quat[1];
-    q.z() = quat[2];
-    q.w() = quat[3];
-    Matrix3d R = q.toRotationMatrix();
+    // Echo what actually resolved: a params-file key that does not match the
+    // node name is ignored without any warning.
+    ROS_INFO("name_base      = '%s'", name_base_.c_str());
+    ROS_INFO("base_frame     = '%s'", base_frame_.c_str());
+    ROS_INFO("vrpn_namespace = '%s'", vrpn_namespace_.c_str());
+    ROS_INFO("require_base   = %s", require_base_ ? "true" : "false");
+    ROS_INFO("list_object    = %zu entries", objects.size());
 
-    // add one line of 0,0,0,1 at the matrix for the transform
-    MatrixXd M(4, 4);
-    M << R(0, 0), R(0, 1), R(0, 2), pos[0], R(1, 0), R(1, 1), R(1, 2), pos[1], R(2, 0), R(2, 1), R(2, 2), pos[2], 0, 0,
-        0, 1;
+    // One subscription to the base, shared by every object, rather than one per
+    // object as before.
+    const std::string base_topic = topicFor(name_base_);
+    ROS_INFO("base topic: %s", base_topic.c_str());
+    base_sub_ = nh.subscribe(base_topic, 1, &OptitrackTransformPublisher::onBase, this);
 
-    // 90 rot in x for the base of Optitrack
-    // NOTE: This matrix was previously used for tracking position in Z-up
-    // currently pose tracking works in Y-up without it
-    // MatrixXd M_rot(4,4);
-    // M_rot << 1, 0, 0, 0,
-    //          0, 0, -1, 0,
-    //          0, 1, 0, 0,
-    //          0, 0, 0, 1;
+    objects_.reserve(objects.size());
+    for (const auto& name : objects) {
+      auto entry = std::make_unique<Entry>();
+      entry->name = name;
+      const std::string in_topic = topicFor(name);
+      const std::string out_topic = in_topic + output_suffix_ + name_base_;
+      entry->pub = nh.advertise<geometry_msgs::PoseStamped>(out_topic, 1);
 
-    // Inverse * object => to have the position relatively of the base of the robot
-    // Vector4d objtemp ={obj[0],obj[1],obj[2],1};
-    // Vector4d outobj;
+      Entry* raw = entry.get();
+      entry->sub = nh.subscribe<geometry_msgs::PoseStamped>(
+          in_topic, 1,
+          [this, raw](const geometry_msgs::PoseStamped::ConstPtr& msg) { onObject(*raw, msg); });
 
-    // outobj = M_rot.inverse()*M.inverse()*objtemp;
-
-    // msgP.pose.position.x = outobj[0];
-    // msgP.pose.position.y = outobj[1];
-    // msgP.pose.position.z = outobj[2];
-
-    Quaterniond q_obj;
-    q_obj.x() = quat_obj[0];
-    q_obj.y() = quat_obj[1];
-    q_obj.z() = quat_obj[2];
-    q_obj.w() = quat_obj[3];
-    Matrix3d R_obj = q_obj.toRotationMatrix();
-    MatrixXd M_obj(4, 4), M_out(4, 4);
-    M_obj << R_obj(0, 0), R_obj(0, 1), R_obj(0, 2), pos_obj[0], R_obj(1, 0), R_obj(1, 1), R_obj(1, 2), pos_obj[1],
-        R_obj(2, 0), R_obj(2, 1), R_obj(2, 2), pos_obj[2], 0, 0, 0, 1;
-
-    //M_out = M_rot.inverse()*M.inverse()*Mo;
-    M_out = M.inverse() * M_obj;
-
-    Matrix3d R_out;
-    R_out << M_out(0, 0), M_out(0, 1), M_out(0, 2), M_out(1, 0), M_out(1, 1), M_out(1, 2), M_out(2, 0), M_out(2, 1),
-        M_out(2, 2);
-
-    Quaterniond q_out(R_out);
-    q_out.normalize();
-
-    msgP.header.frame_id = inputString;
-    msgP.pose.position.x = M_out(0, 3);
-    msgP.pose.position.y = M_out(1, 3);
-    msgP.pose.position.z = M_out(2, 3);
-    msgP.pose.orientation.x = q_out.x();
-    msgP.pose.orientation.y = q_out.y();
-    msgP.pose.orientation.z = q_out.z();
-    msgP.pose.orientation.w = q_out.w();
-  }
-};
-
-std::vector<vrpn> list_objects;
-std::vector<ros::Publisher> list_pub;
-std::vector<ros::Subscriber> list_sub_base;
-std::vector<ros::Subscriber> list_sub;
-
-int main(int argc, char** argv) {
-  string name_base;
-  string base_frame;
-
-  std::vector<std::string> subscribedTopics;
-  std::vector<std::string> subscribedObjects;
-  //Initialisation of the Ros Node (Service, Subscrber and Publisher)
-  ros::init(argc, argv, "objectbase");
-  ros::NodeHandle Nh;
-  Nh.getParam(ros::this_node::getName() + "/base_frame", base_frame);
-  Nh.getParam(ros::this_node::getName() + "/name_base", name_base);
-  Nh.getParam(ros::this_node::getName() + "/list_object", subscribedObjects);
-
-  ROS_INFO("Base topic is:");
-  std::string topic_base = "/vrpn_client_node/"+name_base+"/pose";
-  ROS_INFO("%s", topic_base.c_str());
-
-  // Subscribe to each topic in the list
-  ROS_INFO("List of topics contains:");
-
-  for (const auto& topic : subscribedObjects) {
-    subscribedTopics.push_back("/vrpn_client_node/"+topic+"/pose");
-    ROS_INFO("%s", subscribedTopics.back().c_str());
-
-    vrpn object;
-    list_objects.emplace_back(object);
-  }
-
-  // Get the length of the list
-  size_t list_n = list_objects.size();
-  for (size_t i = 0; i < list_n; ++i) {
-    list_sub_base.emplace_back(Nh.subscribe(topic_base, 1, &vrpn::CC_vrpn_base, &list_objects[i]));
-    list_sub.emplace_back(Nh.subscribe(subscribedTopics[i], 1, &vrpn::CC_vrpn_obj, &list_objects[i]));
-    list_pub.emplace_back(Nh.advertise<geometry_msgs::PoseStamped>(subscribedTopics[i] + "_from_" + name_base.c_str(), 1));
-  }
-  // Set as 1000 in order to process any optitrack frquency
-  ros::Rate loop_rate(1000);
-
-  geometry_msgs::PoseStamped msgP1;
-
-  //begin the ros loop
-  ROS_WARN("WARNING! Verify that Y-up frame is applied on motive");
-  while (ros::ok()) {
-
-    for (size_t i = 0; i < list_n; ++i) {
-      if (list_objects[i].to_publish) {
-        list_objects[i].transform_new_base(base_frame.c_str());
-
-        list_objects[i].msgP.header.stamp = list_objects[i].time;
-        list_pub[i].publish(list_objects[i].msgP);
-        list_objects[i].to_publish = false;
-      }
+      ROS_INFO("%s -> %s", in_topic.c_str(), out_topic.c_str());
+      objects_.push_back(std::move(entry));
     }
 
-    //--------------------------------------------------------------------
-    ros::spinOnce();
-    loop_rate.sleep();
+    ROS_WARN("WARNING! Verify that Y-up frame is applied on motive");
   }
+
+private:
+  struct Entry {
+    std::string name;
+    ros::Subscriber sub;
+    ros::Publisher pub;
+  };
+
+  std::string topicFor(const std::string& rigid_body) const {
+    return vrpn_namespace_ + "/" + rigid_body + "/pose";
+  }
+
+  void onBase(const geometry_msgs::PoseStamped::ConstPtr& msg) {
+    base_pose_ = optitrack::makeIsometry(
+        msg->pose.position.x, msg->pose.position.y, msg->pose.position.z,
+        msg->pose.orientation.x, msg->pose.orientation.y,
+        msg->pose.orientation.z, msg->pose.orientation.w);
+    base_received_ = true;
+  }
+
+  void onObject(const Entry& entry, const geometry_msgs::PoseStamped::ConstPtr& msg) {
+    // See the ROS2 node: a default-constructed Eigen pose is uninitialised
+    // memory, not identity, so transforming against it before the first base
+    // sample publishes plausible-looking garbage.
+    if (require_base_ && !base_received_) {
+      ROS_WARN_THROTTLE(2.0,
+                        "no pose received yet for base '%s'; not publishing '%s'. "
+                        "Is the rigid body tracked, and is the name correct?",
+                        name_base_.c_str(), entry.name.c_str());
+      return;
+    }
+
+    const Eigen::Isometry3d object = optitrack::makeIsometry(
+        msg->pose.position.x, msg->pose.position.y, msg->pose.position.z,
+        msg->pose.orientation.x, msg->pose.orientation.y,
+        msg->pose.orientation.z, msg->pose.orientation.w);
+    const Eigen::Isometry3d out = optitrack::relativePose(base_pose_, object);
+    const Eigen::Quaterniond q(out.linear());
+
+    geometry_msgs::PoseStamped result;
+    result.header.stamp = msg->header.stamp;
+    result.header.frame_id = base_frame_;
+    result.pose.position.x = out.translation().x();
+    result.pose.position.y = out.translation().y();
+    result.pose.position.z = out.translation().z();
+    result.pose.orientation.x = q.x();
+    result.pose.orientation.y = q.y();
+    result.pose.orientation.z = q.z();
+    result.pose.orientation.w = q.w();
+    entry.pub.publish(result);  // event driven -- replaces the 1 kHz poll loop
+  }
+
+  std::string name_base_;
+  std::string base_frame_;
+  std::string vrpn_namespace_;
+  std::string output_suffix_;
+  bool require_base_{true};
+
+  Eigen::Isometry3d base_pose_{Eigen::Isometry3d::Identity()};
+  bool base_received_{false};
+
+  ros::Subscriber base_sub_;
+  std::vector<std::unique_ptr<Entry>> objects_;
+};
+
+}  // namespace optitrack_ros_interface
+
+int main(int argc, char** argv) {
+  ros::init(argc, argv, "optitrack_ros_interface");
+  ros::NodeHandle nh;
+  ros::NodeHandle pnh("~");
+
+  try {
+    optitrack_ros_interface::OptitrackTransformPublisher node(nh, pnh);
+    ros::spin();
+  } catch (const std::exception& e) {
+    ROS_FATAL("%s", e.what());
+    return 1;
+  }
+  return 0;
 }
