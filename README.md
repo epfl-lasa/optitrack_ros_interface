@@ -13,19 +13,15 @@ For each rigid body `X`, it publishes `T_base_X = T_world_base⁻¹ · T_world_X
 
 ## Quick start
 
+There is no default profile, so a bare `docker compose up` starts nothing. Pick
+`--profile ros2` or `--profile ros1`.
+
+ROS1:
 ```bash
-$EDITOR .env                              # Motive IP + rigid bodies
-docker compose --profile ros2 up --build
+docker compose --profile ros1 up --build
 ```
 
-There is no default profile, so a bare `docker compose up` starts nothing — pick
-`--profile ros2` or `--profile ros1`. Running both at once means two VRPN clients
-polling the same rigid bodies.
-
+ROS2:
 ```bash
-docker compose --profile ros2 up -d            # detached
-docker compose --profile ros2 logs -f          # follow
-docker compose --profile ros2 restart ros2     # after editing config/
-docker compose --profile ros2 exec ros2 bash   # a shell
-docker compose --profile ros2 down             # stop
+docker compose --profile ros2 up --build
 ```
