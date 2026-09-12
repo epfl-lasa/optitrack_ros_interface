@@ -34,10 +34,10 @@ public:
     const int qos_depth = declare_parameter<int>("qos_depth", 1);
 
     if (name_base_.empty()) {
-      throw std::runtime_error("parameter 'name_base' is empty -- set OPTITRACK_BASE_OBJECT in .env");
+      throw std::runtime_error("parameter 'name_base' is empty -- set it in config/optitrack_cfg.yaml");
     }
     if (objects.empty()) {
-      throw std::runtime_error("parameter 'list_object' is empty -- set OPTITRACK_OBJECTS in .env");
+      throw std::runtime_error("parameter 'list_object' is empty -- set it in config/optitrack_cfg.yaml");
     }
     // An empty base_frame means "reuse the base rigid-body name", which is what
     // this node published before base_frame existed as a parameter.

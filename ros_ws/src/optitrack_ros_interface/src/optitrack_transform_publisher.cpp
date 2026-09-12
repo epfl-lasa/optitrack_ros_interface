@@ -30,10 +30,10 @@ public:
     pnh.getParam("list_object", objects);
 
     if (name_base_.empty()) {
-      throw std::runtime_error("parameter 'name_base' is empty -- set OPTITRACK_BASE_OBJECT in .env");
+      throw std::runtime_error("parameter 'name_base' is empty -- set it in config/optitrack_cfg.yaml");
     }
     if (objects.empty()) {
-      throw std::runtime_error("parameter 'list_object' is empty -- set OPTITRACK_OBJECTS in .env");
+      throw std::runtime_error("parameter 'list_object' is empty -- set it in config/optitrack_cfg.yaml");
     }
     // Empty base_frame means "reuse the base rigid-body name", matching the ROS2
     // node so both stacks stamp the same frame_id.

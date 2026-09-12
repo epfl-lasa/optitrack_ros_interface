@@ -25,6 +25,10 @@
        without ever being declared here. -->
   <exec_depend>vrpn_mocap</exec_depend>
   <exec_depend>ros2launch</exec_depend>
+  <!-- The launch file parses config/optitrack_cfg.yaml itself with PyYAML,
+       rather than handing it to rcl_yaml_param_parser, since that file also
+       holds the ROS1 driver's non-ros__parameters stanzas. -->
+  <exec_depend>python3-yaml</exec_depend>
 
   <!-- Only the maths unit test. ament_lint_auto is deliberately not pulled in:
        its uncrustify/cpplint/copyright rules reject this repository's existing

@@ -1,0 +1,41 @@
+# Single tracked place for the rig configuration (previously .env) and the
+# VRPN driver settings, in ROS1's flat rosparam shape only. Edit it directly
+# for a given site; config/ is bind mounted read-only, so a change needs a
+# container restart, not a rebuild.
+#
+# ROS1's <rosparam file="..." command="load"/> loads this whole file as-is,
+# so a top-level key must match the node name or it is ignored without
+# warning -- vrpn_client_node and optitrack_ros_interface are the ROS1 node
+# names. ROS2 has no stanza of its own here: its launch file parses these
+# same two keys itself with PyYAML instead of taking a ros__parameters-shaped
+# copy, because rcl_yaml_param_parser refuses to parse this file directly
+# (verified: it fails on these very stanzas with "Cannot have a value before
+# ros__parameters") and does not support YAML anchors either (verified: "Will
+# not support aliasing"). See optitrack.launch.py for the read.
+#
+# vrpn_namespace is the one field NOT shared with ROS2: it names this
+# workspace's own VRPN driver node, which is a launch-wiring detail rather
+# than a site setting, so the ROS2 launch file hardcodes its own instead of
+# reading this one.
+#
+# Version-specific driver params (broadcast_tf, update frequency, refresh
+# frequency, sensor_data_qos, multi_sensor, use_vrpn_timestamps, ...) have no
+# equivalent on both sides and are defaulted directly in each package's
+# launch file instead.
+
+vrpn_client_node:                      # ROS1: vrpn_client_ros
+  server: 128.178.145.172              # PC running Motive (new mocap system)
+  # server: 128.178.145.104            # old mocap system
+  port: 3883
+  frame_id: world
+
+optitrack_ros_interface:               # ROS1 transform publisher
+  # Node name of the VRPN client above; matches its default, spelled out here
+  # so a rename of either node cannot silently desync them.
+  vrpn_namespace: /vrpn_client_node
+  # Rigid bodies to republish.
+  list_object: [target_box, HO_torso, HO_arm_right_sh, HO_arm_right_wr, HO_arm_left_sh, HO_arm_left_wr, AO_wr, AO_sh]
+  # Rigid body marking the robot base. Poses are expressed relative to it and
+  # stamped with its name as header.frame_id. base_frame is left unset: the
+  # node defaults it to name_base.
+  name_base: neura_base

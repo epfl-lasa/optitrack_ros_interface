@@ -10,7 +10,6 @@ name: optitrack
 x-common: &common
   network_mode: host        # DDS discovery (ROS 2) and XMLRPC callbacks (ROS 1)
   init: true                # real PID 1; without it `stop` takes the full 10s grace
-  env_file: [.env]
   restart: unless-stopped
   volumes:
     - ./config:/opt/optitrack/config:ro    # mounted, so edits need a restart not a rebuild
@@ -31,8 +30,8 @@ services:
       dockerfile: docker/ros2.Dockerfile
     environment:
       # Read by the RMW layer before any node starts, so these cannot live in
-      # config/optitrack.ros2.yaml -- there they would silently do nothing.
-      ROS_DOMAIN_ID: "44"               # 67 = neura, 1 = duatic
+      # config/optitrack_cfg.yaml -- there they would silently do nothing.
+      ROS_DOMAIN_ID: 0               # 67 = neura, 1 = duatic
       RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
 
   ros1:

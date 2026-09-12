@@ -9,6 +9,5 @@ if [ -f "${OVERLAY_WS}/install/setup.bash" ]; then
 fi
 
 echo "[optitrack] ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0} RMW=${RMW_IMPLEMENTATION:-<default>}"
-echo "[optitrack] server=${OPTITRACK_SERVER:-<unset>} base=${OPTITRACK_BASE_OBJECT:-<unset>}"
 
 exec "$@"

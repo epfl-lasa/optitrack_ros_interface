@@ -17,6 +17,5 @@ else
 fi
 
 echo "[optitrack] ROS_MASTER_URI=${ROS_MASTER_URI:-<unset>}"
-echo "[optitrack] server=${OPTITRACK_SERVER:-<unset>} base=${OPTITRACK_BASE_OBJECT:-<unset>}"
 
 exec "$@"

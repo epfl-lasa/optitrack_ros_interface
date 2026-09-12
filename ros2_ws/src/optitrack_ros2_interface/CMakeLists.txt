@@ -32,7 +32,7 @@ install(DIRECTORY include/ DESTINATION include)
 # ./config over /opt/optitrack/config and OPTITRACK_CONFIG points there.
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../../config/
   DESTINATION share/${PROJECT_NAME}/config
-  FILES_MATCHING PATTERN "optitrack.ros2.yaml")
+  FILES_MATCHING PATTERN "optitrack_cfg.yaml")
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)

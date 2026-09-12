@@ -25,11 +25,6 @@ vendor/
 *.o
 *.so
 *.a
-# Ignore environment-specific files
-# NOTE: .env itself is intentionally TRACKED -- it is the single place the rig
-# configuration lives, and the lab wants it shared rather than reconstructed.
-.env.local
-.env.*.local
 # Ignore sensitive or personal files
 secrets.txt
 credentials.json

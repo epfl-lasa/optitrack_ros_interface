@@ -11,6 +11,12 @@ For each rigid body `X`, it publishes `T_base_X = T_world_base⁻¹ · T_world_X
 | `ros2_ws/` | Humble       | `vrpn_mocap`      | `ros2`  |
 | `ros_ws/`  | Noetic (EOL) | `vrpn_client_ros` | `ros1`  |
 
+## Configuration
+
+All site-specific settings - the VRPN server address, the list of rigid
+bodies to republish, and which one is the robot base - live in
+[`config/optitrack_cfg.yaml`](config/optitrack_cfg.yaml).
+
 ## Quick start
 
 There is no default profile, so a bare `docker compose up` starts nothing. Pick

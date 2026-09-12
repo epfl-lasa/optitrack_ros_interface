@@ -22,7 +22,7 @@ RUN useradd --create-home --shell /bin/bash ${USERNAME}
 # Container logs are a pipe, not a tty, so logging would otherwise be buffered.
 ENV RCUTILS_LOGGING_BUFFERED_STREAM=0
 ENV OVERLAY_WS=/home/${USERNAME}/ros2_ws
-ENV OPTITRACK_CONFIG=/opt/optitrack/config/optitrack.ros2.yaml
+ENV OPTITRACK_CONFIG=/opt/optitrack/config/optitrack_cfg.yaml
 
 COPY --chmod=0755 docker/entrypoint-ros2.sh /opt/optitrack/entrypoint-ros2.sh
 COPY config/ /opt/optitrack/config/
