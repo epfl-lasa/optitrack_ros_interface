@@ -36,12 +36,19 @@ def generate_launch_description():
     # This workspace's own VRPN driver node name. Not read from the config
     # file: vrpn_namespace there is ROS1's own node name ("/vrpn_client_node"),
     # which does not apply here -- this is launch wiring, not a site setting.
+    #
+    # Unlike ROS1's vrpn_client_ros, vrpn_mocap publishes "<tracker>/pose"
+    # relative to the node's *namespace*, not under its name. Without an
+    # explicit namespace the poses land on /<tracker>/pose while the transform
+    # publisher listens on /<vrpn_node_name>/<tracker>/pose, so nothing ever
+    # arrives. Push the driver into a namespace of the same name.
     vrpn_node_name = 'vrpn_mocap_client'
 
     return LaunchDescription([
         Node(
             package='vrpn_mocap',
             executable='client_node',
+            namespace=vrpn_node_name,
             name=vrpn_node_name,
             output='screen',
             parameters=[{
