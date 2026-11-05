@@ -7,14 +7,18 @@ if [ -f "${OVERLAY_WS}/devel/setup.bash" ]; then
   source "${OVERLAY_WS}/devel/setup.bash"
 fi
 
-# roscpp rejects an empty ROS_IP outright, so drop it rather than pass it on.
-# ROS_IP and ROS_HOSTNAME are mutually exclusive.
+# Advertise this container's bridge IP for XMLRPC and TCPROS callbacks.
+# Preserve an explicit override; never pass an empty ROS_IP to roscpp.
 if [ -z "${ROS_IP:-}" ]; then
-  unset ROS_IP
-else
-  unset ROS_HOSTNAME
-  echo "[optitrack] ROS_IP=${ROS_IP}"
+  read -r -a container_ips <<< "$(hostname -I)"
+  export ROS_IP="${container_ips[0]:-}"
+  if [ -z "$ROS_IP" ]; then
+    echo "[optitrack] Could not determine container IP; set ROS_IP explicitly." >&2
+    exit 1
+  fi
 fi
+unset ROS_HOSTNAME
+echo "[optitrack] ROS_IP=${ROS_IP}"
 
 echo "[optitrack] ROS_MASTER_URI=${ROS_MASTER_URI:-<unset>}"
 

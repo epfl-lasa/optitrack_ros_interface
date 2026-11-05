@@ -27,6 +27,18 @@ ROS1:
 docker compose --profile ros1 up --build
 ```
 
+The container uses host networking. Two ROS master setups are possible:
+
+- **Local master (default):** `ROS_MASTER_URI` is unset, so `roslaunch`
+  starts its own master on `localhost:11311`. `ROS_IP` defaults to the host's
+  first IP address.
+- **External master** (e.g. a robot container): uncomment the `environment`
+  block of the `ros1` service in `docker-compose.yml` and set `ROS_MASTER_URI`
+  to the master and `ROS_IP` to an address of this host the master can reach.
+
+Only one instance of these nodes may run per master: identical node names make
+them shut each other down.
+
 ROS2:
 ```bash
 docker compose --profile ros2 up --build
