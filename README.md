@@ -1,3 +1,9 @@
+> [!WARNING]
+> **This repository is deprecated and no longer maintained.**
+> It has moved to the official LASA GitLab: **<https://gitlab.epfl.ch/lasa/laboratory-common/optitrack/optitrack_ros_interface>**
+>
+> Please use the new repository for all future development, issues, and merge requests.
+
 # optitrack_ros_interface
 
 Republishes OptiTrack/Motive rigid-body poses — received over VRPN — in a robot
